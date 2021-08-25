@@ -1,0 +1,42 @@
+{
+  "name": "ez-harvest",
+  "version": "0.0.3",
+  "description": "Pluggable Captcha harvester",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "prettier-format": "prettier --config .prettierrc {src,test}/**/*.ts --write",
+    "build": "tsc",
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kfichter/ez-harvest.git"
+  },
+  "keywords": ["reCAPTCHA", "captcha", "harvester"],
+  "author": "MillenniumEarl",
+  "contributors": ["Kelvin Fichter"],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kfichter/ez-harvest/issues"
+  },
+  "homepage": "https://github.com/kfichter/ez-harvest#readme",
+  "dependencies": {
+    "electron": "^13.2.2",
+    "express": "^4.17.1",
+    "uuid": "^8.3.2",
+    "ws": "^8.2.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.29.3",
+    "@typescript-eslint/parser": "^4.29.3",
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.1",
+    "prettier": "^2.3.2",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.3.5"
+  }
+}
