@@ -11,10 +11,16 @@ import assert from "assert";
 const captchaViewServerPort = 8456;
 const captchaHarvestServerPort = 8457;
 
-let captchaWindows = {};
+const captchaWindows: BrowserWindow = undefined;
 
 const createCaptchaWindow = (pageUrl, sitekey, captchaId, autoClick) => {
-  let captchaWindow = new BrowserWindow({
+  const u = new URL(pageUrl);
+  u.searchParams.set("sitekey", sitekey);
+  u.searchParams.set("captchaId", captchaId);
+  u.searchParams.set("autoClick", autoClick);
+  captchaWindow.loadURL(u.toString());
+
+  const captchaWindow = new BrowserWindow({
     width: 320,
     height: 92,
     show: true,
@@ -25,26 +31,15 @@ const createCaptchaWindow = (pageUrl, sitekey, captchaId, autoClick) => {
   captchaWindow.once("closed", () => {
     // Captcha has failed if we haven't responded by now
     ipcMain.emit(`failed-captcha-${captchaId}`);
-
-    captchaWindow = null;
   });
 
-  captchaWindow.once("ready-to-show", () => {
-    captchaWindow.show();
-  });
+  captchaWindow.once("ready-to-show", () => captchaWindow.show());
 
-  captchaWindow.webContents.session.setProxy(
-    {
-      proxyRules: `http://127.0.0.1:${captchaViewServerPort}`,
-      pacScript: "",
-      proxyBypassRules: ".google.com, .gstatic.com"
-    },
-    () => {
-      captchaWindow.loadURL(
-        `${pageUrl}?sitekey=${sitekey}&captchaId=${captchaId}&autoClick=${autoClick}`
-      );
-    }
-  );
+  captchaWindow.webContents.session.setProxy({
+    proxyRules: `http://127.0.0.1:${captchaViewServerPort}`,
+    pacScript: "",
+    proxyBypassRules: ".google.com, .gstatic.com"
+  });
 
   captchaWindows[captchaId] = captchaWindow;
 };

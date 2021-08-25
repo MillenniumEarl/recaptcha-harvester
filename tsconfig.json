@@ -9,7 +9,6 @@
         "incremental": true,
         "sourceMap": true,
         "alwaysStrict": true,
-        "strict": true,
         "declaration": true
     },
     "include": [
