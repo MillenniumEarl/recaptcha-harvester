@@ -3,77 +3,110 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import electron from "electron";
-import proc from "child_process";
+// Public modules from npm
 import WebSocket from "ws";
-import uuidv4 from "uuid/v4";
+import uuidv4 from "uuid";
 
-class EzHarvest {
-  constructor() {
-    process.on("exit", () => {
-      if (this.child) {
-        this.child.kill();
-      }
-    });
+// Local modules
+import {
+  ICaptchaError,
+  ICaptchaMessage,
+  ICaptchaRequest,
+  ICaptchaResponse,
+  IResponseData
+} from "./interfaces";
+import { startServers, stopServers } from "./main";
+import { HARVEST_SERVER_PORT } from "./constants";
+
+export default class CaptchaHarvest {
+  // Fields
+  initialized: boolean = false;
+  socket: WebSocket = undefined;
+
+  async start(): Promise<CaptchaHarvest> {
+    if (this.initialized) throw new Error("Harvester already initialized");
+
+    // Satrt server and wait for socket to open
+    startServers();
+    this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);
+    await waitForOpenConnection(this.socket);
+
+    this.initialized = true;
+    return this;
   }
 
-  start() {
-    if (this.child) {
-      throw new Error("ez-harvest already running");
-    }
+  stop(): void {
+    if (!this.initialized)
+      throw new Error(
+        "Unable to terminate an harvester that was never started"
+      );
 
-    this.child = proc.spawn(electron, [
-      `${__dirname}/main.js`,
-      "--programmatic"
-    ]);
+    // Stop servers and close open socket
+    stopServers();
+    this.socket.close();
 
-    return new Promise((resolve) => {
-      const initInterval = setInterval(() => {
-        let ws = new WebSocket("ws://127.0.0.1:8457");
-        ws.on("open", () => {
-          clearInterval(initInterval);
-          resolve();
-        });
-        ws.on("error", () => {
-          ws = null;
-          console.log("Connecting to ez-harvest...");
-        });
-      }, 100);
-    });
+    this.initialized = false;
   }
 
-  getCaptchaToken(pageUrl, sitekey, autoClick = false) {
-    const ws = new WebSocket("ws://127.0.0.1:8457");
+  getCaptchaToken(
+    url: string,
+    sitekey: string,
+    autoClick = false
+  ): Promise<IResponseData> {
+    // Send request to harvest reCAPTCHA token
+    const request: ICaptchaRequest = {
+      type: "Request",
+      siteurl: url,
+      sitekey: sitekey,
+      id: uuidv4.v4(),
+      autoClick: autoClick
+    };
+    this.socket.send(JSON.stringify(request));
 
-    ws.on("open", () => {
-      const request = {
-        type: "CaptchaRequest",
-        data: {
-          pageUrl: pageUrl,
-          sitekey: sitekey,
-          captchaId: uuidv4(),
-          autoClick: autoClick
-        }
-      };
-      ws.send(JSON.stringify(request));
-    });
+    return new Promise<IResponseData>((resolve, reject) => {
+      this.socket.on("message", (message) => {
+        // Parse the incoming response
+        const parsed: ICaptchaMessage = JSON.parse(message.toString());
 
-    return new Promise((resolve, reject) => {
-      ws.once("message", (message) => {
-        const parsedMessage = JSON.parse(message);
-        const messageType = parsedMessage["type"];
-        const messageData = parsedMessage["data"];
-
-        switch (messageType) {
-          case "CaptchaResponse":
-            resolve(messageData);
-            break;
-          case "Error":
-            reject(messageData);
-        }
+        if (parsed?.type === "Error") {
+          const e = parsed as ICaptchaError;
+          reject(new Error(e.error));
+        } else if (parsed?.type == "Response") {
+          const r = parsed as ICaptchaResponse;
+          resolve(r.data);
+        } else reject(new Error("Unexpected response message"));
       });
     });
   }
 }
 
-module.exports = EzHarvest;
+/**
+ * Wait for the WebSocket to open.
+ * @param attemps Maximum number of opening attempts
+ * @param interval Milliseconds every when to check that the socket is open
+ */
+function waitForOpenConnection(
+  socket: WebSocket,
+  attemps = 10,
+  interval = 200
+) {
+  return new Promise<void>((resolve, reject) => {
+    let currentAttempt = 0;
+
+    // Check for opening every interval value
+    const i = setInterval(() => {
+      if (currentAttempt >= attemps) {
+        // Too many attemps
+        clearInterval(i);
+        reject(new Error("Maximum number of opening attempts exceeded"));
+      } else if (socket.readyState === socket.OPEN) {
+        // The socket is open, exit from method
+        clearInterval(i);
+        resolve();
+      }
+
+      // Increment attemp counter
+      currentAttempt++;
+    }, interval);
+  });
+}

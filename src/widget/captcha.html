@@ -2,24 +2,13 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>ez-harvest</title>
+  <title>Captcha harvest</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
 </head>
 <body>
-  <style>
-    body {
-      height: 100vh;
-      width: 100vw;
-      margin: 0;
-      background-color: #222127;
-      overflow: hidden;
-    }  
-
-    #g-recaptcha-container {
-      padding: 8px;
-    }
-  </style>
-
+  <!-- Show the reCAPTCHA widget -->
   <div id="g-recaptcha-container"></div>
 
   <script type="text/javascript">
@@ -107,6 +96,6 @@
       }, 500);
     }
   </script>
-  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+  
 </body>
 </html>

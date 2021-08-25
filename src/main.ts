@@ -3,145 +3,163 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
-import { app, BrowserWindow, ipcMain } from "electron";
+// Core modules
+import assert from "assert";
+import path from "path";
+import { Server } from "http";
+
+// Public modules from npm
+import { BrowserWindow, ipcMain } from "electron";
 import express from "express";
 import WebSocket from "ws";
-import assert from "assert";
 
-const captchaViewServerPort = 8456;
-const captchaHarvestServerPort = 8457;
+// Local modules
+import {
+  ICaptchaError,
+  ICaptchaMessage,
+  ICaptchaRequest,
+  ICaptchaResponse,
+  IResponseData
+} from "./interfaces";
+import { VIEW_SERVER_PORT, HARVEST_SERVER_PORT } from "./constants";
 
-const captchaWindows: BrowserWindow = undefined;
+// Global variables and constants
+const captchaWindowBank: { [s: string]: BrowserWindow } = {};
+let captchaViewServer = undefined;
+let captchaHarvestServer = undefined;
 
-const createCaptchaWindow = (pageUrl, sitekey, captchaId, autoClick) => {
-  const u = new URL(pageUrl);
-  u.searchParams.set("sitekey", sitekey);
-  u.searchParams.set("captchaId", captchaId);
-  u.searchParams.set("autoClick", autoClick);
-  captchaWindow.loadURL(u.toString());
-
-  const captchaWindow = new BrowserWindow({
+/**
+ * Create the BrowserWindow which will show the reCAPTCHA widget.
+ * @param pageUrl
+ * @param sitekey
+ * @param captchaId
+ * @param autoClick
+ */
+async function createCaptchaWindow(
+  pageUrl: string,
+  sitekey: string,
+  captchaId: string,
+  autoClick: boolean
+): Promise<BrowserWindow> {
+  // Create the window
+  const w = new BrowserWindow({
     width: 320,
     height: 92,
     show: true,
     frame: true,
-    resizeable: false
+    resizable: false
   });
 
-  captchaWindow.once("closed", () => {
-    // Captcha has failed if we haven't responded by now
-    ipcMain.emit(`failed-captcha-${captchaId}`);
-  });
+  // Captcha has failed if we haven't responded by now
+  w.once("closed", () => ipcMain.emit(`failed-captcha-${captchaId}`));
+  w.once("ready-to-show", () => w.show());
 
-  captchaWindow.once("ready-to-show", () => captchaWindow.show());
-
-  captchaWindow.webContents.session.setProxy({
-    proxyRules: `http://127.0.0.1:${captchaViewServerPort}`,
+  await w.webContents.session.setProxy({
+    proxyRules: `http://127.0.0.1:${VIEW_SERVER_PORT}`,
     pacScript: "",
     proxyBypassRules: ".google.com, .gstatic.com"
   });
 
-  captchaWindows[captchaId] = captchaWindow;
-};
+  const u = new URL(pageUrl);
+  u.searchParams.set("sitekey", sitekey);
+  u.searchParams.set("captchaId", captchaId);
+  u.searchParams.set("autoClick", autoClick ? "1" : "0");
+  await w.loadURL(u.toString());
 
-const startCaptchaViewServer = () => {
-  const expressApp = express();
+  return w;
+}
 
-  expressApp.get("/", (req, res) => {
-    res.sendFile("./captcha.html", {
-      root: __dirname
-    });
+async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
+  // Verify the parameters
+  assert.notStrictEqual(message.siteurl, undefined);
+  assert.notStrictEqual(message.sitekey, undefined);
+  assert.notStrictEqual(message.id, undefined);
+
+  // Show the window with the Captcha
+  captchaWindowBank[message.id] = await createCaptchaWindow(
+    message.siteurl,
+    message.sitekey,
+    message.id,
+    message.autoClick
+  );
+
+  ipcMain.once(`failed-captcha-${message.id}`, () => {
+    // The window closes without verify the captcha
+    const response: ICaptchaError = {
+      type: "Error",
+      error: "Captcha Window Closed"
+    };
+    ws.send(JSON.stringify(response));
   });
 
-  expressApp.listen(captchaViewServerPort);
-};
+  ipcMain.once(`submit-captcha-${message.id}`, (_event, arg) => {
+    // Captcha resolved, close the window
+    captchaWindowBank[message.id].close();
 
-const startCaptchaHarvestServer = () => {
+    // Return the response
+    const data: IResponseData = {
+      token: arg.value,
+      createdAt: arg.createdAt
+    };
+    const response: ICaptchaResponse = {
+      type: "Response",
+      data: data
+    };
+    ws.send(JSON.stringify(response));
+  });
+}
+
+/**
+ * Initialize the server that will provide the captcha widget.
+ * @param port Listening port
+ */
+function startCaptchaViewServer(port: number): Server {
+  // Create the server
+  const e = express();
+
+  // Get the widget path
+  const widgetPath = path.join(__dirname, "widget", "captcha.html");
+
+  // At every GET request, return the CAPTCHA widget
+  e.get("/", (_req, res) => res.sendFile(widgetPath));
+
+  // Start listening on the port
+  return e.listen(port);
+}
+
+function startCaptchaHarvestServer(port: number): WebSocket.Server {
+  // Create a new WebServer listening on a specific port
   const wss = new WebSocket.Server({
-    port: captchaHarvestServerPort
+    port: port
   });
-
-  const handleCaptchaRequest = (ws, data) => {
-    const pageUrl = data["pageUrl"];
-    const sitekey = data["sitekey"];
-    const captchaId = data["captchaId"];
-    const autoClick = data["autoClick"];
-
-    assert.notEqual(pageUrl, undefined);
-    assert.notEqual(sitekey, undefined);
-    assert.notEqual(captchaId, undefined);
-
-    createCaptchaWindow(pageUrl, sitekey, captchaId, autoClick);
-
-    // Make sure we don't respond twice
-    let hasResponsed = false;
-
-    ipcMain.once(`failed-captcha-${captchaId}`, () => {
-      if (hasResponsed) {
-        return;
-      }
-
-      const response = {
-        type: "Error",
-        data: "Captcha Window Closed"
-      };
-      ws.send(JSON.stringify(response));
-      hasResponsed = true;
-    });
-
-    ipcMain.once(`submit-captcha-${captchaId}`, (event, arg) => {
-      if (hasResponsed) {
-        return;
-      }
-
-      captchaWindows[captchaId].close();
-
-      const response = {
-        type: "CaptchaResponse",
-        data: {
-          value: arg.value,
-          createdAt: arg.createdAt
-        }
-      };
-      ws.send(JSON.stringify(response));
-      hasResponsed = true;
-    });
-  };
 
   wss.on("connection", (ws) => {
     ws.on("message", (message) => {
-      try {
-        const parsedMessage = JSON.parse(message);
-        const messageType = parsedMessage["type"];
-        const messageData = parsedMessage["data"];
+      // Parse the incoming message
+      const parsedMessage: ICaptchaMessage = JSON.parse(message.toString());
 
-        switch (messageType) {
-          case "CaptchaRequest":
-            handleCaptchaRequest(ws, messageData);
-            break;
-        }
-      } catch (e) {
-        console.log(e);
-
-        const response = {
+      // Check if the format is valid
+      if (parsedMessage?.type === "Request") {
+        handleCaptchaRequest(ws, parsedMessage as ICaptchaRequest);
+      } else {
+        const response: ICaptchaError = {
           type: "Error",
-          data: "Invalid Message Format"
+          error: "Invalid Message Format"
         };
         ws.send(JSON.stringify(response));
       }
     });
   });
-};
 
-try {
-  app.on("ready", () => {
-    startCaptchaViewServer();
-    startCaptchaHarvestServer();
-  });
+  return wss;
+}
 
-  app.on("window-all-closed", () => {
-    // TODO: Do something here?
-  });
-} catch (e) {
-  throw e;
+export function startServers(): void {
+  captchaViewServer = startCaptchaViewServer(VIEW_SERVER_PORT);
+  captchaHarvestServer = startCaptchaHarvestServer(HARVEST_SERVER_PORT);
+}
+
+export function stopServers(): void {
+  captchaViewServer.close();
+  captchaHarvestServer.close();
 }

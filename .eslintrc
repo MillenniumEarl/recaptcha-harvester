@@ -23,7 +23,7 @@
     "overrides": [
         {
             "files": [
-                "*/src/example.ts"
+                "./src/example.ts"
             ],
             "rules": {
                 "no-console": "off"
