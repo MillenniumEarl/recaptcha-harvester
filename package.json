@@ -1,7 +1,7 @@
 {
-  "name": "ez-harvest",
-  "version": "0.0.3",
-  "description": "Pluggable Captcha harvester",
+  "name": "recaptcha-harvester",
+  "version": "1.0.0",
+  "description": "Pluggable Captcha harvester with Electron",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kfichter/ez-harvest.git"
+    "url": "git+https://github.com/MillenniumEarl/recaptcha-harvester.git"
   },
   "keywords": [
     "reCAPTCHA",
@@ -26,9 +26,9 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kfichter/ez-harvest/issues"
+    "url": "https://github.com/MillenniumEarl/recaptcha-harvester/issues"
   },
-  "homepage": "https://github.com/kfichter/ez-harvest#readme",
+  "homepage": "https://github.com/MillenniumEarl/recaptcha-harvester#readme",
   "dependencies": {
     "electron": "^13.2.2",
     "uuid": "^8.3.2",
