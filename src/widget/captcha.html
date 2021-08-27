@@ -74,9 +74,9 @@
         if (parentStyle.visibility === 'visible') {
           const width = parseInt(parentStyle.width.replace('px',''));
           const height = parseInt(challengeStyle.height.replace('px','')) + 20;
-          window.api.send("resize", {width: width, height: height});
+          window.api.send("resize", {id: id, width: width, height: height});
         } else {
-          window.api.send("resize", {width: initialWidth, height: initialHeight});
+          window.api.send("resize", {id: id, width: initialWidth, height: initialHeight});
         }
       }
     }, checkInterval);
