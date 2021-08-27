@@ -11,7 +11,6 @@ export interface ICaptchaRequest extends ICaptchaMessage {
   siteurl: string;
   sitekey: string;
   id: string;
-  autoClick: boolean;
 }
 
 export interface IResponseData {

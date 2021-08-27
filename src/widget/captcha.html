@@ -22,12 +22,12 @@
   <script type="text/javascript">
     // Constants
     const MARGIN_WIDTH = 10;
-    const MARGIN_HEIGHT = 35;
-    const INITIAL_WIDTH = 320 + MARGIN_WIDTH;
-    const INITIAL_HEIGHT = 92 + MARGIN_HEIGHT;
+    const MARGIN_HEIGHT = 30;
+    const INITIAL_WIDTH = 300 + MARGIN_WIDTH;
+    const INITIAL_HEIGHT = 85 + MARGIN_HEIGHT;
     const FRAME_WIDTH = 400;
     const FRAME_HEIGHT = 580;
-    const RESIZE_INTERVAL_MS = 1000;
+    const RESIZE_INTERVAL_MS = 500;
     
     /* Parse the query parameters */
     const urlSearchParams = new URLSearchParams(window.location.search);
@@ -36,7 +36,6 @@
     /* Get our query parameters */
     const id = params['id'];
     const sitekey = params['sitekey'];
-    const autoClick = params['autoClick'];
 
     /* Called when Captcha is loaded */
     var onloadCallback = function() {
@@ -90,21 +89,6 @@
         window.api.send("resize", options);
       }
     }, RESIZE_INTERVAL_MS);
-
-    /* Handle autoclick */
-    if (autoClick) {
-      const captchaInterval = setInterval(() => {
-        const challengeFrame = document.querySelector('iframe[role="presentation"]');
-
-        if (challengeFrame) {
-          const challengeButton = challengeFrame.contentDocument.getElementsByClassName('recaptcha-checkbox-checkmark')[0];
-
-          if (challengeButton) {
-            challengeButton.click();
-          }
-        }
-      }, 500);
-    }
   </script>
   
 </body>

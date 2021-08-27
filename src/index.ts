@@ -48,11 +48,7 @@ export default class CaptchaHarvest {
     this.initialized = false;
   }
 
-  getCaptchaToken(
-    url: string,
-    sitekey: string,
-    autoClick = false
-  ): Promise<IResponseData> {
+  getCaptchaToken(url: string, sitekey: string): Promise<IResponseData> {
     // Parse and convert the url to use HTTP
     const domain = new URL(url);
     const parsedURL = `http://${domain.hostname}`;
@@ -62,8 +58,7 @@ export default class CaptchaHarvest {
       type: "Request",
       siteurl: parsedURL,
       sitekey: sitekey,
-      id: uuid(),
-      autoClick: autoClick
+      id: uuid()
     };
     this.socket.send(JSON.stringify(request));
 
