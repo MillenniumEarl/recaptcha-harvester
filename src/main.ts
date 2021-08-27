@@ -32,14 +32,13 @@ let captchaHarvestServer = undefined;
  * Create the BrowserWindow which will show the reCAPTCHA widget.
  * @param pageUrl
  * @param sitekey
- * @param captchaId
+ * @param id
  * @param autoClick
  */
 async function createCaptchaWindow(
-  pageUrl: string,
+  siteurl: string,
   sitekey: string,
-  captchaId: string,
-  autoClick: boolean
+  id: string
 ): Promise<BrowserWindow> {
   // Create the window
   const w = new BrowserWindow({
@@ -47,24 +46,33 @@ async function createCaptchaWindow(
     height: 92,
     show: true,
     frame: true,
-    resizable: false
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    alwaysOnTop: true,
+    webPreferences: {
+      devTools: false,
+      preload: path.join(__dirname, "preload.js") // Use a preload script
+    }
   });
 
+  // Disable menubar
+  w.setMenu(null);
+
   // Captcha has failed if we haven't responded by now
-  w.once("closed", () => ipcMain.emit(`failed-captcha-${captchaId}`));
+  w.once("closed", () => ipcMain.emit(`failed-captcha-${id}`));
   w.once("ready-to-show", () => w.show());
 
   await w.webContents.session.setProxy({
-    proxyRules: `http://127.0.0.1:${VIEW_SERVER_PORT}`,
-    pacScript: "",
+    mode: "fixed_servers",
+    proxyRules: `http=127.0.0.1:${VIEW_SERVER_PORT};https=127.0.0.1`,
     proxyBypassRules: ".google.com, .gstatic.com"
   });
 
-  const u = new URL(pageUrl);
+  const u = new URL(siteurl);
   u.searchParams.set("sitekey", sitekey);
-  u.searchParams.set("captchaId", captchaId);
-  u.searchParams.set("autoClick", autoClick ? "1" : "0");
-  await w.loadURL(u.toString());
+  u.searchParams.set("id", id);
+  w.loadURL(u.toString());
 
   return w;
 }
@@ -79,9 +87,13 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   captchaWindowBank[message.id] = await createCaptchaWindow(
     message.siteurl,
     message.sitekey,
-    message.id,
-    message.autoClick
+    message.id
   );
+
+  ipcMain.on("resize", (_event, args) => {
+    captchaWindowBank[args.id].setSize(args.width, args.height);
+    captchaWindowBank[args.id].center();
+  });
 
   ipcMain.once(`failed-captcha-${message.id}`, () => {
     // The window closes without verify the captcha
