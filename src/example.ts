@@ -7,8 +7,8 @@
 import CaptchaHarvest from ".";
 
 // Global variables
-const WEBSITE = "https://f95zone.to";
-const SITEKEY = "6LcwQ5kUAAAAAAI-_CXQtlnhdMjmFDt-MruZ2gov";
+const WEBSITE = "https://my-website-here";
+const SITEKEY = "UNIQUE-SITE-KEY";
 
 async function main() {
   // Create and start harvester
