@@ -3,18 +3,29 @@
 // This software is released under the MIT License.
 // https://opensource.org/licenses/MIT
 
+// Local modules
 import CaptchaHarvest from ".";
 
-const WEBSITE = "";
-const SITEKEY = "";
+// Global variables
+const WEBSITE = "https://f95zone.to";
+const SITEKEY = "6LcwQ5kUAAAAAAI-_CXQtlnhdMjmFDt-MruZ2gov";
 
-new CaptchaHarvest()
-  .start() // Start servers and WebSocket
-  .then((harvester) => {
-    console.log("Harvester started correctly");
-    harvester
-      .getCaptchaToken(WEBSITE, SITEKEY)
-      .then((data) => console.log(`Token retrieved: ${data.token}`))
-      .catch((e: Error) => console.log(e.message))
-      .finally(() => harvester.stop());
-  });
+async function main() {
+  // Create and start harvester
+  const harvester = new CaptchaHarvest();
+  await harvester.start();
+  console.log("Harvester started correctly");
+
+  // Fetch the token
+  try {
+    const data = await harvester.getCaptchaToken(WEBSITE, SITEKEY);
+    console.log(`Token retrieved: ${data.token}`);
+  } catch (e) {
+    console.log(e);
+  }
+
+  // Stop the harvester
+  harvester.stop();
+}
+
+main();
