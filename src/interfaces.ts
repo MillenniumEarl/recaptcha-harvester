@@ -8,9 +8,9 @@ export interface ICaptchaMessage {
 }
 
 export interface ICaptchaRequest extends ICaptchaMessage {
-  id: string;
   siteurl: string;
   sitekey: string;
+  id: string;
   autoClick: boolean;
 }
 

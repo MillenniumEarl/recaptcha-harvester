@@ -30,7 +30,7 @@
 
     /* Get our query parameters */
     const sitekey = params['sitekey'];
-    const captchaId = params['captchaId'];
+    const id = params['id'];
     const autoClick = params['autoClick'];
 
     /* Called when Captcha is loaded */
@@ -45,7 +45,7 @@
     /* Called when Captcha is submitted */
     var submit = function() {
       const captchaToken = document.getElementById('g-recaptcha-response').value;
-      window.api.send(`submit-captcha-${captchaId}`, {
+      window.api.send(`submit-captcha-${id}`, {
         value: captchaToken,
         createdAt: Math.round(new Date() / 1000)
       });
