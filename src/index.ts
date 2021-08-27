@@ -5,7 +5,7 @@
 
 // Public modules from npm
 import WebSocket from "ws";
-import uuidv4 from "uuid";
+import { v4 as uuid } from "uuid";
 
 // Local modules
 import {
@@ -26,7 +26,7 @@ export default class CaptchaHarvest {
   async start(): Promise<CaptchaHarvest> {
     if (this.initialized) throw new Error("Harvester already initialized");
 
-    // Satrt server and wait for socket to open
+    // Start server and wait for socket to open
     startServers();
     this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);
     await waitForOpenConnection(this.socket);
@@ -53,12 +53,16 @@ export default class CaptchaHarvest {
     sitekey: string,
     autoClick = false
   ): Promise<IResponseData> {
+    // Parse and convert the url to use HTTP
+    const domain = new URL(url);
+    const parsedURL = `http://${domain.hostname}`;
+
     // Send request to harvest reCAPTCHA token
     const request: ICaptchaRequest = {
       type: "Request",
-      siteurl: url,
+      siteurl: parsedURL,
       sitekey: sitekey,
-      id: uuidv4.v4(),
+      id: uuid(),
       autoClick: autoClick
     };
     this.socket.send(JSON.stringify(request));
