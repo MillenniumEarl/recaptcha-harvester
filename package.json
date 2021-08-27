@@ -7,9 +7,9 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "prettier-format": "prettier --config .prettierrc {src,test}/**/*.ts --write",
-    "build": "tsc",
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --project ./ && copyfiles -u 1 src/widget/* dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "example": "npm run build && electron --trace-warnings ./dist/example.js"
   },
   "repository": {
     "type": "git",
