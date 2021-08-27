@@ -77,6 +77,10 @@ async function createCaptchaWindow(
   return w;
 }
 
+/**
+ * It manages the creation of the window with the RECAPTCHA
+ * widget and the transmission of the received token.
+ */
 async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   // Verify the parameters
   assert.notStrictEqual(message.siteurl, undefined);
@@ -139,6 +143,10 @@ function startCaptchaViewServer(port: number): Server {
   return e.listen(port);
 }
 
+/**
+ * Initialize the server that will handle token obtaining requests.
+ * @param port Listening port
+ */
 function startCaptchaHarvestServer(port: number): WebSocket.Server {
   // Create a new WebServer listening on a specific port
   const wss = new WebSocket.Server({

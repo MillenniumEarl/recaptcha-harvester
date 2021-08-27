@@ -23,6 +23,9 @@ export default class CaptchaHarvest {
   initialized: boolean = false;
   socket: WebSocket = undefined;
 
+  /**
+   * Initialize the servers used to get and process the CAPTCHA widget.
+   */
   async start(): Promise<CaptchaHarvest> {
     if (this.initialized) throw new Error("Harvester already initialized");
 
@@ -35,6 +38,9 @@ export default class CaptchaHarvest {
     return this;
   }
 
+  /**
+   * Stop the servers used to get and process the CAPTCHA widget.
+   */
   stop(): void {
     if (!this.initialized)
       throw new Error(
@@ -48,6 +54,11 @@ export default class CaptchaHarvest {
     this.initialized = false;
   }
 
+  /**
+   * Gets a valid token for the requested site.
+   * @param url URL of the site to request the token from
+   * @param sitekey Unique key associated with the site
+   */
   getCaptchaToken(url: string, sitekey: string): Promise<IResponseData> {
     // Parse and convert the url to use HTTP
     const domain = new URL(url);
