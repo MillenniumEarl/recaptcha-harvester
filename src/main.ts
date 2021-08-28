@@ -9,7 +9,7 @@ import path from "path";
 import { Server } from "http";
 
 // Public modules from npm
-import { BrowserWindow, ipcMain } from "electron";
+import { BrowserWindow, ipcMain, app } from "electron";
 import express from "express";
 import WebSocket from "ws";
 
@@ -25,8 +25,8 @@ import { VIEW_SERVER_PORT, HARVEST_SERVER_PORT } from "./constants";
 
 // Global variables and constants
 const captchaWindowBank: { [s: string]: BrowserWindow } = {};
-let captchaViewServer = undefined;
-let captchaHarvestServer = undefined;
+let captchaViewServer: Server = undefined;
+let captchaHarvestServer: WebSocket.Server = undefined;
 
 /**
  * Create the BrowserWindow which will show the reCAPTCHA widget.
@@ -57,10 +57,6 @@ async function createCaptchaWindow(
 
   // Disable menubar
   w.setMenu(null);
-
-  // Captcha has failed if we haven't responded by now
-  w.once("closed", () => ipcMain.emit(`failed-captcha-${id}`));
-  w.once("ready-to-show", () => w.show());
 
   await w.webContents.session.setProxy({
     mode: "fixed_servers",
@@ -100,7 +96,8 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
     }
   });
 
-  ipcMain.once(`failed-captcha-${message.id}`, () => {
+  // Captcha has failed if we haven't responded by now
+  captchaWindowBank[message.id].once("closed", () => {
     // The window closes without verify the captcha
     const response: ICaptchaError = {
       type: "Error",
@@ -131,7 +128,7 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
  * Initialize the server that will provide the captcha widget.
  * @param port Listening port
  */
-function startCaptchaViewServer(port: number): Server {
+function startCaptchaViewServer(port: number): Promise<Server> {
   // Create the server
   const e = express();
 
@@ -141,8 +138,9 @@ function startCaptchaViewServer(port: number): Server {
   // At every GET request, return the CAPTCHA widget
   e.get("/", (_req, res) => res.sendFile(widgetPath));
 
-  // Start listening on the port
-  return e.listen(port);
+  return new Promise((resolve) => {
+    const server = e.listen(port, () => resolve(server));
+  });
 }
 
 /**
@@ -176,12 +174,15 @@ function startCaptchaHarvestServer(port: number): WebSocket.Server {
   return wss;
 }
 
-export function startServers(): void {
-  captchaViewServer = startCaptchaViewServer(VIEW_SERVER_PORT);
+export async function startServers(): Promise<void> {
+  captchaViewServer = await startCaptchaViewServer(VIEW_SERVER_PORT);
   captchaHarvestServer = startCaptchaHarvestServer(HARVEST_SERVER_PORT);
 }
 
 export function stopServers(): void {
   captchaViewServer.close();
   captchaHarvestServer.close();
+  app.quit();
 }
+
+app.on("window-all-closed", (e) => e.preventDefault());
