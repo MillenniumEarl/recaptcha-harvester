@@ -30,7 +30,7 @@ export default class CaptchaHarvest {
     if (this.initialized) throw new Error("Harvester already initialized");
 
     // Start server and wait for socket to open
-    startServers();
+    await startServers();
     this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);
     await waitForOpenConnection(this.socket);
 
