@@ -1,0 +1,11 @@
+# Directories
+.github
+.vscode
+src
+test
+
+# Files
+.env
+.prettierc
+.elintignore
+.eslintrc
