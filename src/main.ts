@@ -30,10 +30,9 @@ let captchaHarvestServer = undefined;
 
 /**
  * Create the BrowserWindow which will show the reCAPTCHA widget.
- * @param pageUrl
- * @param sitekey
- * @param id
- * @param autoClick
+ * @param siteurl HTTP URL of the website where harvest the captcha
+ * @param sitekey Unique alphanumeric code associate with the website
+ * @param id ID for this specific captcha harvest
  */
 async function createCaptchaWindow(
   siteurl: string,
@@ -95,8 +94,10 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   );
 
   ipcMain.on("resize", (_event, args) => {
-    captchaWindowBank[args.id].setSize(args.width, args.height);
-    captchaWindowBank[args.id].center();
+    if (captchaWindowBank[args.id]) {
+      captchaWindowBank[args.id].setSize(args.width, args.height);
+      captchaWindowBank[args.id].center();
+    }
   });
 
   ipcMain.once(`failed-captcha-${message.id}`, () => {
@@ -111,6 +112,7 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   ipcMain.once(`submit-captcha-${message.id}`, (_event, arg) => {
     // Captcha resolved, close the window
     captchaWindowBank[message.id].close();
+    captchaWindowBank[message.id] = null;
 
     // Return the response
     const data: IResponseData = {
