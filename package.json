@@ -9,7 +9,7 @@
     "prettier-format": "prettier --config .prettierrc {src,test}/**/*.ts --write",
     "build": "tsc --project ./ && copyfiles -u 1 src/widget/* dist",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example": "npm run build && electron --trace-warnings ./dist/example.js"
+    "example": "npm run build && node --trace-warnings ./dist/example.js"
   },
   "repository": {
     "type": "git",
