@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "prettier-format": "prettier --config .prettierrc {src,test}/**/*.ts --write",
-    "build": "tsc --project ./ && copyfiles -u 1 src/widget/* dist",
+    "build": "tsc --project ./ && copyfiles -u 1 src/widget/**/* dist",
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "npm run build && node --trace-warnings ./dist/example.js"
   },
@@ -31,6 +31,7 @@
   "homepage": "https://github.com/MillenniumEarl/recaptcha-harvester#readme",
   "dependencies": {
     "electron": "^13.2.2",
+    "tree-kill": "^1.2.2",
     "uuid": "^8.3.2",
     "ws": "^8.2.0"
   },
