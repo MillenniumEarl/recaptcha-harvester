@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>ReCaptcha Harvest</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Include local styles -->
+  <link rel="stylesheet" href="styles/recaptcha-style.css">
+
+  <!-- Include local scripts -->
+  <script src="scripts/shared.js"></script>
+  <script src="scripts/scripts.js"></script>
+  <script src="scripts/events-recaptcha.js"></script>
+
+  <!-- Include external scripts -->
+  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+</head>
+<body>
+  <!-- Show the reCAPTCHA widget -->
+  <div id="g-recaptcha-container"></div>
+
+  <script type="text/javascript">
+    // Constants
+    const RESIZE_INTERVAL_MS = 500;
+    
+    // Get id and sitekey
+    parseParameters();
+  
+    /* Resize automatically to fit images */
+    const sizeInterval = setInterval(() => resizeReCaptcha(window.shared.id), RESIZE_INTERVAL_MS);
+  </script>
+  
+</body>
+</html>
