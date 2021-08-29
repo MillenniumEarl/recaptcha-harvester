@@ -15,7 +15,7 @@ SITEKEY = UNIQUE-SITE-KEY
 import dotenv from "dotenv";
 
 // Local modules
-import CaptchaHarvest from ".";
+import { CaptchaHarvest } from ".";
 
 // Configure the .env reader
 dotenv.config();
