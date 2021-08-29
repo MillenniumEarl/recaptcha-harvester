@@ -1,95 +1,99 @@
 <!doctype html>
 <html>
+
 <head>
-  <meta charset="utf-8">
-  <title>Captcha Harvest</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
-  <style>
-    body {
-      height: 100vh;
-      width: 100vw;
-      margin: 0;
-      background-color: #222127;
-      overflow: hidden;
-    }
-  </style>
+    <meta charset="utf-8">
+    <title>Captcha Harvest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+    <style>
+        body {
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            background-color: #222127;
+            overflow: hidden;
+        }
+    </style>
 </head>
+
 <body>
-  <!-- Show the reCAPTCHA widget -->
-  <div id="g-recaptcha-container"></div>
+    <!-- Show the reCAPTCHA widget -->
+    <div id="g-recaptcha-container"></div>
 
-  <script type="text/javascript">
-    // Constants
-    const MARGIN_WIDTH = 10;
-    const MARGIN_HEIGHT = 30;
-    const INITIAL_WIDTH = 300 + MARGIN_WIDTH;
-    const INITIAL_HEIGHT = 85 + MARGIN_HEIGHT;
-    const FRAME_WIDTH = 400;
-    const FRAME_HEIGHT = 580;
-    const RESIZE_INTERVAL_MS = 500;
-    
-    /* Parse the query parameters */
-    const urlSearchParams = new URLSearchParams(window.location.search);
-    const params = Object.fromEntries(urlSearchParams.entries());
+    <script type="text/javascript">
+        // Constants
+        const MARGIN_WIDTH = 10;
+        const MARGIN_HEIGHT = 30;
+        const INITIAL_WIDTH = 300 + MARGIN_WIDTH;
+        const INITIAL_HEIGHT = 85 + MARGIN_HEIGHT;
+        const FRAME_WIDTH = 400;
+        const FRAME_HEIGHT = 580;
+        const RESIZE_INTERVAL_MS = 500;
 
-    /* Get our query parameters */
-    const id = params['id'];
-    const sitekey = params['sitekey'];
+        /* Parse the query parameters */
+        const urlSearchParams = new URLSearchParams(window.location.search);
+        const params = Object.fromEntries(urlSearchParams.entries());
 
-    /* Called when Captcha is loaded */
-    var onloadCallback = function() {
-      grecaptcha.render('g-recaptcha-container', {
-        sitekey: sitekey,
-        theme: 'dark',
-        callback: submit
-      });
-      console.log("Rendering reCAPTCHA widget...");
-    };
+        /* Get our query parameters */
+        const id = params['id'];
+        const sitekey = params['sitekey'];
 
-    /* Called when Captcha is submitted */
-    var submit = function() {
-      const captchaToken = document.getElementById('g-recaptcha-response').value;
-      window.api.send(`submit-captcha-${id}`, {
-        value: captchaToken,
-        createdAt: Math.round(new Date() / 1000)
-      });
-      console.log(`Send token: ${captchaToken}`);
-    };
-
-    /* Resize automatically to fit images */
-    const sizeInterval = setInterval(() => {
-      // Select the reCAPTCHA popup frame (with squares)
-      const challengeFrame = document.querySelectorAll('div > div > iframe')[1];
-
-      if (challengeFrame) {
-        // Get the parents of the challenge
-        // frameParent CONTAINS challengeParent CONTAINS challengeFrame
-        const challengeParent = challengeFrame.parentElement;
-        const frameParent = challengeParent.parentElement;
-
-        // Put the parent in the left-top corner
-        challengeParent.style.position = "fixed";
-        challengeParent.style.right = "";
-
-        // Prepare resize message
-        const options = { 
-          id: id, 
-          width: INITIAL_WIDTH,
-          height: INITIAL_HEIGHT
+        /* Called when Captcha is loaded */
+        var onloadCallback = function () {
+            grecaptcha.render('g-recaptcha-container', {
+                sitekey: sitekey,
+                theme: 'dark',
+                callback: submit
+            });
+            console.log("Rendering reCAPTCHA widget...");
         };
 
-        if (frameParent.style.visibility === 'visible') {
-          options.width = parseInt(challengeFrame.style.width.replace("px",""), 10) + MARGIN_WIDTH;
-          options.height = parseInt(challengeFrame.style.height.replace("px",""), 10) + MARGIN_HEIGHT;
-        }
-        
-        // Send resize message via IPC
-        console.log(`Resize: (${options.width}x${options.height})`);
-        window.api.send("resize", options);
-      }
-    }, RESIZE_INTERVAL_MS);
-  </script>
-  
+        /* Called when Captcha is submitted */
+        var submit = function () {
+            const captchaToken = document.getElementById('g-recaptcha-response').value;
+            window.api.send(`submit-captcha-${id}`, {
+                value: captchaToken,
+                createdAt: Math.round(new Date() / 1000)
+            });
+            console.log(`Send token: ${captchaToken}`);
+        };
+
+        /* Resize automatically to fit images */
+        const sizeInterval = setInterval(() => {
+            // Select the reCAPTCHA popup frame (with squares)
+            const challengeFrame = document.querySelectorAll('div > div > iframe')[1];
+
+            if (challengeFrame) {
+                // Get the parents of the challenge
+                // frameParent CONTAINS challengeParent CONTAINS challengeFrame
+                const challengeParent = challengeFrame.parentElement;
+                const frameParent = challengeParent.parentElement;
+
+                // Put the parent in the left-top corner
+                challengeParent.style.position = "fixed";
+                challengeParent.style.right = "";
+
+                // Prepare resize message
+                const options = {
+                    id: id,
+                    width: INITIAL_WIDTH,
+                    height: INITIAL_HEIGHT
+                };
+
+                if (frameParent.style.visibility === 'visible') {
+                    options.width = parseInt(challengeFrame.style.width.replace("px", ""), 10) + MARGIN_WIDTH;
+                    options.height = parseInt(challengeFrame.style.height.replace("px", ""), 10) +
+                    MARGIN_HEIGHT;
+                }
+
+                // Send resize message via IPC
+                console.log(`Resize: (${options.width}x${options.height})`);
+                window.api.send("resize", options);
+            }
+        }, RESIZE_INTERVAL_MS);
+    </script>
+
 </body>
+
 </html>
