@@ -30,7 +30,7 @@ export function startCaptchaViewServer(port: number): Promise<Server> {
   //e.use("/scripts", express.static(path.join(basePath, "scripts")));
   //e.use("/styles", express.static(path.join(basePath, "styles")));
 
-  // At every GET request, return the CAPTCHA widget
+  // At every GET request, serve the CAPTCHA widget
   e.get("/", (_req, res) => res.sendFile(widgetPath));
 
   return new Promise((resolve) => {
