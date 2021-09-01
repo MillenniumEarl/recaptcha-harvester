@@ -33,20 +33,10 @@ export default class CaptchaHarvest {
     if (this.child) throw new Error("Harvester already initialized");
 
     // Start the servers and the electron process in a separate process
-    this.child = proc.exec(
-      `electron ${__dirname}/main.js`,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          return;
-        }
-        console.log(`stdout: ${stdout}`);
-        console.error(`stderr: ${stderr}`);
-      }
-    );
+    this.child = proc.exec(`electron ${__dirname}/main.js`);
 
     // Wait for the child to initialize
-    await sleep(6000);
+    await sleep(5000);
 
     // Start and wait for socket to open
     this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);

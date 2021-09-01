@@ -29,22 +29,22 @@ export async function createCaptchaWindow(
     height: 92,
     show: true,
     frame: true,
-    // resizable: false,
-    // minimizable: false,
-    // maximizable: false,
-    // alwaysOnTop: true,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    alwaysOnTop: true,
     webPreferences: {
-      //devTools: false,
+      devTools: false,
       preload: path.join(__dirname, "..", "preload.js") // Use a preload script
     }
   });
 
   // Disable menubar
-  //w.setMenu(null);
+  w.setMenu(null);
 
   await w.webContents.session.setProxy({
     mode: "fixed_servers",
-    proxyRules: `http=127.0.0.1:${VIEW_SERVER_PORT}`,
+    proxyRules: `http=127.0.0.1:${VIEW_SERVER_PORT};https=127.0.0.1:${VIEW_SERVER_PORT}`,
     proxyBypassRules: ".google.com, .gstatic.com"
   });
 
