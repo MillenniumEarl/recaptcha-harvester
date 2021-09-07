@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "prettier-format": "prettier --config .prettierrc {src,test}/**/*.ts --write",
-    "build": "tsc --project ./ && copyfiles -u 1 src/widget/**/* dist",
+    "build": "tsc --project ./ && copyfiles -u 1 src/widget/**/* dist && copyfiles security/* dist",
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "npm run build && node --trace-warnings ./dist/example.js"
   },
@@ -29,14 +29,18 @@
     "url": "https://github.com/MillenniumEarl/recaptcha-harvester/issues"
   },
   "homepage": "https://github.com/MillenniumEarl/recaptcha-harvester#readme",
+  "engines": { 
+    "node": ">=14.10" 
+  },
   "dependencies": {
     "electron": "^14.0.0",
-    "tree-kill": "^1.2.2",
+    "node-ipc": "<10.0.0",
     "uuid": "^8.3.2",
     "ws": "^8.2.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
+    "@types/node-ipc": "^9.1.5",
     "@types/uuid": "^8.3.1",
     "@types/ws": "^7.4.7",
     "@typescript-eslint/eslint-plugin": "^4.30.0",
