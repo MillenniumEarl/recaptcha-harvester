@@ -10,6 +10,7 @@ import { Server } from "http";
 // Public modules from npm
 import { BrowserWindow, ipcMain, app } from "electron";
 import WebSocket from "ws";
+import ipc from "node-ipc";
 
 // Local modules
 import {
@@ -26,9 +27,11 @@ import {
 import { createCaptchaWindow } from "./auxiliary/captcha-window";
 
 // Global variables and constants
-const captchaWindowBank: { [s: string]: BrowserWindow } = {};
-let captchaViewServer: Server = undefined;
-let captchaHarvestServer: WebSocket.Server = undefined;
+const CAPTCHA_WINDOWS_BANK: { [s: string]: BrowserWindow } = {};
+const MAIN_PROCESS_IPC_ID = "captcha-harvester-main-process";
+let captchaViewServer: Server;
+let captchaHarvestServer: WebSocket.Server;
+let ipcClient: any;
 
 /**
  * It manages the creation of the window with the RECAPTCHA
@@ -41,21 +44,21 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   assert.notStrictEqual(message.id, undefined);
 
   // Show the window with the Captcha
-  captchaWindowBank[message.id] = await createCaptchaWindow(
+  CAPTCHA_WINDOWS_BANK[message.id] = await createCaptchaWindow(
     message.siteurl,
     message.sitekey,
     message.id
   );
 
   ipcMain.on("resize", (_event, args) => {
-    if (captchaWindowBank[args.id]) {
-      captchaWindowBank[args.id].setSize(args.width, args.height);
-      captchaWindowBank[args.id].center();
+    if (CAPTCHA_WINDOWS_BANK[args.id]) {
+      CAPTCHA_WINDOWS_BANK[args.id].setSize(args.width, args.height);
+      CAPTCHA_WINDOWS_BANK[args.id].center();
     }
   });
 
   // Captcha has failed if we haven't responded by now
-  captchaWindowBank[message.id].once("closed", () => {
+  CAPTCHA_WINDOWS_BANK[message.id].once("closed", () => {
     // The window closes without verify the captcha
     const response: ICaptchaError = {
       type: "Error",
@@ -66,8 +69,8 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
 
   ipcMain.once(`submit-captcha-${message.id}`, (_event, arg) => {
     // Captcha resolved, close the window
-    captchaWindowBank[message.id].close();
-    captchaWindowBank[message.id] = null;
+    CAPTCHA_WINDOWS_BANK[message.id].close();
+    CAPTCHA_WINDOWS_BANK[message.id] = null;
 
     // Return the response
     const data: IResponseData = {
@@ -82,18 +85,51 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   });
 }
 
+function startIPCServer() {
+  // Configure the IPC client
+  ipc.config.id = "captcha-harvester-child-process";
+  ipc.config.retry = 1500;
+  ipc.config.silent = true;
+
+  // Connnect to the main process
+  ipc.connectTo(MAIN_PROCESS_IPC_ID);
+  const client = ipc.of["captcha-harvester-main-process"];
+
+  // Close servers when a "kill" message is received
+  client.on("kill", () => stopServers());
+
+  // Send the confirmation of IPC loading
+  client.emit("ipc-loaded");
+  return client;
+}
+
 export async function startServers(): Promise<void> {
+  // Start the IPC client used to communicate with the main process
+  ipcClient = startIPCServer();
+
+  // Start the server used to rendere the CAPTCHA in Electron
   captchaViewServer = await startCaptchaViewServer(VIEW_SERVER_PORT);
+
+  // Start the server used to fetch the local CAPTCHA
   captchaHarvestServer = startCaptchaHarvestServer(
     HARVEST_SERVER_PORT,
     handleCaptchaRequest
   );
+
+  // Send a message to the main process to notificate that the servers are ready
+  ipcClient.emit("servers-ready");
 }
 
 export function stopServers(): void {
+  // Stop servers
   captchaViewServer.close();
   captchaHarvestServer.close();
-  app.quit();
+
+  // Close the IPC client (send a "socket.disconnected" event)
+  ipc.disconnect(MAIN_PROCESS_IPC_ID);
+
+  // Close this Electron instance
+  app.exit();
 }
 
 // Start the servers when this script is called in the main process

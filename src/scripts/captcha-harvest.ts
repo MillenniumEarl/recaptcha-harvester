@@ -9,7 +9,7 @@ import proc from "child_process";
 // Public modules from npm
 import WebSocket from "ws";
 import { v4 as uuid } from "uuid";
-import kill from "tree-kill";
+import ipc from "node-ipc";
 
 // Local modules
 import {
@@ -23,8 +23,16 @@ import { HARVEST_SERVER_PORT } from "./constants";
 
 export default class CaptchaHarvest {
   // Fields
-  socket: WebSocket = undefined;
-  child: proc.ChildProcess = undefined;
+  socket: WebSocket;
+  child: proc.ChildProcess;
+
+  private startIPCServer() {
+    ipc.config.id = "captcha-harvester-main-process";
+    ipc.config.retry = 1500;
+    ipc.config.silent = true;
+    ipc.serve();
+    ipc.server.start();
+  }
 
   /**
    * Initialize the servers used to get and process the CAPTCHA widget.
@@ -32,15 +40,18 @@ export default class CaptchaHarvest {
   async start(): Promise<CaptchaHarvest> {
     if (this.child) throw new Error("Harvester already initialized");
 
+    // Start IPC server for prcess communicatio
+    this.startIPCServer();
+
     // Start the servers and the electron process in a separate process
     this.child = proc.exec(`electron ${__dirname}/main.js`);
 
-    // Wait for the child to initialize
-    await sleep(5000);
-
     // Start and wait for socket to open
-    this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);
-    await waitForOpenConnection(this.socket);
+    ipc.server.on(
+      "servers-ready",
+      () =>
+        (this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`))
+    );
 
     return this;
   }
@@ -52,10 +63,17 @@ export default class CaptchaHarvest {
     if (!this.child) throw new Error("Harvester not started");
 
     // Kill child process
-    kill(this.child.pid);
+    ipc.server.broadcast("kill");
 
     // Close open socket
     this.socket.close();
+
+    // Close IPC server
+    ipc.server.stop();
+
+    // Delete the reference to the variable
+    this.socket = null;
+    this.child = null;
   }
 
   /**
@@ -63,8 +81,12 @@ export default class CaptchaHarvest {
    * @param url URL of the site to request the token from
    * @param sitekey Unique key associated with the site
    */
-  getCaptchaToken(url: string, sitekey: string): Promise<IResponseData> {
+  async getCaptchaToken(url: string, sitekey: string): Promise<IResponseData> {
     if (!this.child) throw new Error("Harvester not started");
+
+    // Wait for the socket to be ready
+    while (!this.socket) await sleep(500);
+    await waitForOpenConnection(this.socket);
 
     // Parse and convert the url to use HTTP
     const domain = new URL(url);
