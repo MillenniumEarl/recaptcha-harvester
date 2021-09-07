@@ -6,6 +6,7 @@ test
 
 # Files
 .env
-.prettierc
-.elintignore
+.prettierrc
+.eslintignore
 .eslintrc
+tsconfig.json
