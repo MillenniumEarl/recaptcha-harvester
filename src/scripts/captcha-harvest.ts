@@ -85,7 +85,7 @@ export default class CaptchaHarvest {
     if (!this.child) throw new Error("Harvester not started");
 
     // Wait for the socket to be ready
-    while (!this.socket) await sleep(500);
+    while (!this.socket) await sleep(200);
     await waitForOpenConnection(this.socket);
 
     // Parse and convert the url to use HTTP
