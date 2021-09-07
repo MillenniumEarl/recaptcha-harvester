@@ -1,0 +1,15 @@
+{
+    "configurations": [
+    {
+        "type": "node-terminal",
+        "name": "Example",
+        "request": "launch",
+        "command": "npm run example",
+        "cwd": "${workspaceFolder}",
+        "skipFiles": [
+            "${workspaceFolder}/node_modules/**/*",
+            "<node_internals>/**/*"
+        ]
+    }
+    ]
+}
