@@ -5,6 +5,7 @@
 
 // Core modules
 import proc from "child_process";
+import { join } from "path";
 
 // Public modules from npm
 import WebSocket from "ws";
@@ -44,7 +45,8 @@ export default class CaptchaHarvest {
     this.startIPCServer();
 
     // Start the servers and the electron process in a separate process
-    this.child = proc.exec(`electron ${__dirname}/main.js`);
+    const path = join(__dirname, "main.js");
+    this.child = proc.exec(`electron ${path}`);
 
     // Start and wait for socket to open
     ipc.server.on(
