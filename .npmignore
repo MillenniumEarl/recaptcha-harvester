@@ -1,10 +1,14 @@
 # Directories
 .github
 .vscode
+security
 src
 test
 
 # Files
+/dist/tsconfig.tsbuildinfo
+/dist/example.*
+/src/example.ts
 .env
 .prettierrc
 .eslintignore
