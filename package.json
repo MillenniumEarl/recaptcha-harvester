@@ -35,7 +35,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "electron": "^14.0.0",
-    "node-ipc": "<10.0.0",
+    "node-ipc": "<11.0.0",
     "uuid": "^8.3.2",
     "ws": "^8.2.1"
   },
