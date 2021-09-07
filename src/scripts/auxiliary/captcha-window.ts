@@ -7,10 +7,10 @@
 import path from "path";
 
 // Public modules from npm
-import { BrowserWindow } from "electron";
+import { BrowserWindow, app } from "electron";
 
 // Local modules
-import { VIEW_SERVER_PORT } from "../constants";
+import { VIEW_SERVER_PORT_HTTP, VIEW_SERVER_PORT_HTTPS } from "../constants";
 
 /**
  * Create the BrowserWindow which will show the reCAPTCHA widget.
@@ -39,12 +39,16 @@ export async function createCaptchaWindow(
     }
   });
 
+  // These lines allow Electron to use Self-Signed SSL certificates
+  app.commandLine.appendSwitch("allow-insecure-localhost");
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+
   // Disable menubar
   w.setMenu(null);
 
   await w.webContents.session.setProxy({
     mode: "fixed_servers",
-    proxyRules: `http=127.0.0.1:${VIEW_SERVER_PORT};https=127.0.0.1:${VIEW_SERVER_PORT}`,
+    proxyRules: `http=localhost:${VIEW_SERVER_PORT_HTTP};https=localhost:${VIEW_SERVER_PORT_HTTPS}`,
     proxyBypassRules: ".google.com, .gstatic.com"
   });
 
@@ -52,6 +56,18 @@ export async function createCaptchaWindow(
   u.searchParams.set("sitekey", sitekey);
   u.searchParams.set("id", id);
   w.loadURL(u.toString());
+
+  w.webContents.on(
+    "certificate-error",
+    (event, url, error, certificate, callback) => {
+      event.preventDefault();
+      callback(true);
+    }
+  );
+
+  w.webContents.on("did-fail-load", (_e, code, description) => {
+    throw new Error(`${code}: ${description}`);
+  });
 
   return w;
 }
