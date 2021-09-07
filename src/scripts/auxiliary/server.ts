@@ -5,7 +5,8 @@
 
 // Core modules
 import path from "path";
-import { createServer, Server } from "https";
+import http from "http";
+import https from "https";
 import { readFile } from "fs/promises";
 
 // Public modules from npm
@@ -18,8 +19,12 @@ import { ICaptchaMessage, ICaptchaRequest, ICaptchaError } from "../interfaces";
 /**
  * Initialize the server that will provide the captcha widget.
  * @param port Listening port
+ * @param protocol Protocol used in the server
  */
-export async function startCaptchaViewServer(port: number): Promise<Server> {
+export async function startCaptchaViewServer(
+  port: number,
+  protocol: "HTTP" | "HTTPS"
+): Promise<http.Server | https.Server> {
   // Create the server
   const e = express();
 
@@ -44,9 +49,11 @@ export async function startCaptchaViewServer(port: number): Promise<Server> {
   };
 
   return new Promise((resolve) => {
-    const server = createServer(httpsOptions, e).listen(port, () =>
-      resolve(server)
-    );
+    const server =
+      protocol === "HTTP"
+        ? http.createServer(e)
+        : https.createServer(httpsOptions, e);
+    server.listen(port, () => resolve(server));
   });
 }
 

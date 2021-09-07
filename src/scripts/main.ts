@@ -19,7 +19,11 @@ import {
   ICaptchaResponse,
   IResponseData
 } from "./interfaces";
-import { VIEW_SERVER_PORT, HARVEST_SERVER_PORT } from "./constants";
+import {
+  HARVEST_SERVER_PORT,
+  VIEW_SERVER_PORT_HTTP,
+  VIEW_SERVER_PORT_HTTPS
+} from "./constants";
 import {
   startCaptchaViewServer,
   startCaptchaHarvestServer
@@ -29,7 +33,8 @@ import { createCaptchaWindow } from "./auxiliary/captcha-window";
 // Global variables and constants
 const CAPTCHA_WINDOWS_BANK: { [s: string]: BrowserWindow } = {};
 const MAIN_PROCESS_IPC_ID = "captcha-harvester-main-process";
-let captchaViewServer: Server;
+let captchaViewServerHTTP: Server;
+let captchaViewServerHTTPS: Server;
 let captchaHarvestServer: WebSocket.Server;
 let ipcClient: any;
 
@@ -107,8 +112,15 @@ export async function startServers(): Promise<void> {
   // Start the IPC client used to communicate with the main process
   ipcClient = startIPCServer();
 
-  // Start the server used to rendere the CAPTCHA in Electron
-  captchaViewServer = await startCaptchaViewServer(VIEW_SERVER_PORT);
+  // Start the servers used to rendere the CAPTCHA in Electron
+  captchaViewServerHTTP = await startCaptchaViewServer(
+    VIEW_SERVER_PORT_HTTP,
+    "HTTP"
+  );
+  captchaViewServerHTTPS = await startCaptchaViewServer(
+    VIEW_SERVER_PORT_HTTPS,
+    "HTTPS"
+  );
 
   // Start the server used to fetch the local CAPTCHA
   captchaHarvestServer = startCaptchaHarvestServer(
@@ -122,7 +134,8 @@ export async function startServers(): Promise<void> {
 
 export function stopServers(): void {
   // Stop servers
-  captchaViewServer.close();
+  captchaViewServerHTTP.close();
+  captchaViewServerHTTPS.close();
   captchaHarvestServer.close();
 
   // Close the IPC client (send a "socket.disconnected" event)
