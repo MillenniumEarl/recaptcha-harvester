@@ -109,7 +109,7 @@ export default class CaptchaHarvest {
         if (parsed?.type === "Error") {
           const e = parsed as ICaptchaError;
           reject(new Error(e.error));
-        } else if (parsed?.type == "Response") {
+        } else if (parsed?.type === "Response") {
           const r = parsed as ICaptchaResponse;
           resolve(r.data);
         } else reject(new Error("Unexpected response message"));
