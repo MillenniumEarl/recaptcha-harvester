@@ -72,6 +72,19 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
     ws.send(JSON.stringify(response));
   });
 
+  // If the Electron window doesn't load, send this error.
+  // Usually is a -324:ERR_EMPTY_RESPONSE caused by HTTPS servers
+  CAPTCHA_WINDOWS_BANK[message.id].webContents.on(
+    "did-fail-load",
+    (_e, code, description) => {
+      const response: ICaptchaError = {
+        type: "Error",
+        error: `${code}: ${description}`
+      };
+      ws.send(JSON.stringify(response));
+    }
+  );
+
   ipcMain.once(`submit-captcha-${message.id}`, (_event, arg) => {
     // Captcha resolved, close the window
     CAPTCHA_WINDOWS_BANK[message.id].close();

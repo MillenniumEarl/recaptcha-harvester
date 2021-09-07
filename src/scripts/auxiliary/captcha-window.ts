@@ -65,9 +65,5 @@ export async function createCaptchaWindow(
     }
   );
 
-  w.webContents.on("did-fail-load", (_e, code, description) => {
-    throw new Error(`${code}: ${description}`);
-  });
-
   return w;
 }
