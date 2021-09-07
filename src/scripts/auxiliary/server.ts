@@ -5,7 +5,8 @@
 
 // Core modules
 import path from "path";
-import { Server } from "http";
+import { createServer, Server } from "https";
+import { readFile } from "fs/promises";
 
 // Public modules from npm
 import express from "express";
@@ -18,7 +19,7 @@ import { ICaptchaMessage, ICaptchaRequest, ICaptchaError } from "../interfaces";
  * Initialize the server that will provide the captcha widget.
  * @param port Listening port
  */
-export function startCaptchaViewServer(port: number): Promise<Server> {
+export async function startCaptchaViewServer(port: number): Promise<Server> {
   // Create the server
   const e = express();
 
@@ -27,14 +28,25 @@ export function startCaptchaViewServer(port: number): Promise<Server> {
   const widgetPath = path.join(basePath, "captcha.html");
 
   // Serve style and scripts
-  //e.use("/scripts", express.static(path.join(basePath, "scripts")));
-  //e.use("/styles", express.static(path.join(basePath, "styles")));
+  e.use("/scripts", express.static(path.join(basePath, "scripts")));
+  e.use("/styles", express.static(path.join(basePath, "styles")));
 
   // At every GET request, serve the CAPTCHA widget
   e.get("/", (_req, res) => res.sendFile(widgetPath));
 
+  // Load Self-Signed SSL key for HTTPS server
+  const securityPath = path.join(__dirname, "..", "..", "security");
+  const httpsOptions = {
+    key: await readFile(path.join(securityPath, "cert.key")),
+    cert: await readFile(path.join(securityPath, "cert.pem")),
+    requestCert: false,
+    rejectUnauthorized: false
+  };
+
   return new Promise((resolve) => {
-    const server = e.listen(port, () => resolve(server));
+    const server = createServer(httpsOptions, e).listen(port, () =>
+      resolve(server)
+    );
   });
 }
 
