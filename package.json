@@ -8,7 +8,8 @@
     "prettify": "prettier --config .prettierrc {src,test}/**/*.ts --write",
     "build": "tsc --project ./ && copyfiles -u 1 src/widget/**/* dist && copyfiles security/* dist",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example": "npm run build && node --trace-warnings ./dist/example.js"
+    "example-node": "npm run build && node --trace-warnings ./dist/example.js",
+    "example-electron": "npm run build && electron --trace-warnings ./dist/example.js"
   },
   "repository": {
     "type": "git",
