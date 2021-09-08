@@ -2,9 +2,20 @@
     "configurations": [
     {
         "type": "node-terminal",
-        "name": "Example",
+        "name": "Example Node JS",
         "request": "launch",
-        "command": "npm run example",
+        "command": "npm run example-node",
+        "cwd": "${workspaceFolder}",
+        "skipFiles": [
+            "${workspaceFolder}/node_modules/**/*",
+            "<node_internals>/**/*"
+        ]
+    },
+    {
+        "type": "node-terminal",
+        "name": "Example Electron",
+        "request": "launch",
+        "command": "npm run example-electron",
         "cwd": "${workspaceFolder}",
         "skipFiles": [
             "${workspaceFolder}/node_modules/**/*",
