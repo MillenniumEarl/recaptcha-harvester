@@ -24,9 +24,18 @@ import { HARVEST_SERVER_PORT } from "./constants";
 
 export default class CaptchaHarvest {
   // Fields
+  /**
+   * WebSocket used to communicate with the servers initialized in the child process.
+   */
   socket: WebSocket;
+  /**
+   * Child process used start a Electron instance to show the CAPTCHA widget.
+   */
   child: proc.ChildProcess;
 
+  /**
+   * Start the IPC server used to communicate with the child process.
+   */
   private startIPCServer() {
     ipc.config.id = "captcha-harvester-main-process";
     ipc.config.retry = 1500;
@@ -36,17 +45,84 @@ export default class CaptchaHarvest {
   }
 
   /**
+   * Check if the current process is a Electron's Renderer instance.
+   */
+  private isRendererProcess(): boolean {
+    return (
+      typeof window !== "undefined" &&
+      typeof window?.process === "object" &&
+      window.process.type === "renderer"
+    );
+  }
+
+  /**
+   * Check if the current process is a Electron's Main instance.
+   */
+  private isMainProcess(): boolean {
+    return (
+      typeof process !== "undefined" &&
+      typeof process?.versions === "object" &&
+      !!process.versions.electron
+    );
+  }
+
+  /**
+   * Check if the current process is a Electron
+   * instance with enabled node inntegration.
+   */
+  private hasNodeIntegration(): boolean {
+    return (
+      typeof navigator === "object" &&
+      typeof navigator.userAgent === "string" &&
+      navigator.userAgent.indexOf("Electron") >= 0
+    );
+  }
+
+  /**
+   * Check if the current process is a Electron instance.
+   */
+  private isElectron(): boolean {
+    return (
+      this.isRendererProcess() ||
+      this.isMainProcess() ||
+      this.hasNodeIntegration()
+    );
+  }
+
+  private runChild(modulePath: string): proc.ChildProcess {
+    // First check if the process is running as Electron instance
+    const runAsElectron = this.isElectron();
+
+    // Use exec for node process and spawn for Electron process
+    // The spawn command is the implementation of the fork method
+    // but without the default parameter ELECTRON_RUN_AS_NODE=1.
+    // If fork is used no Electron module will be available in the child module
+    const child = runAsElectron
+      ? proc.spawn(process.execPath, [modulePath])
+      : proc.exec(`electron ${modulePath}`, (error) => {
+          if (error) throw new Error(`${error.code}: ${error.message}`);
+        });
+
+    // Rethrow child's error
+    child.on("error", (error) => {
+      throw error;
+    });
+
+    return child;
+  }
+
+  /**
    * Initialize the servers used to get and process the CAPTCHA widget.
    */
   async start(): Promise<CaptchaHarvest> {
     if (this.child) throw new Error("Harvester already initialized");
 
-    // Start IPC server for prcess communicatio
+    // Start IPC server for process communication
     this.startIPCServer();
 
     // Start the servers and the electron process in a separate process
     const path = join(__dirname, "main.js");
-    this.child = proc.exec(`electron ${path}`);
+    this.child = this.runChild(path);
 
     // Start and wait for socket to open
     ipc.server.on(
