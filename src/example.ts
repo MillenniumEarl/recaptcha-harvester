@@ -32,13 +32,14 @@ async function main() {
       process.env.WEBSITE,
       process.env.SITEKEY
     );
-    console.log(`Token retrieved: ${data.token}`);
+    console.log(`Token retrieved:\n${data.token}`);
   } catch (e) {
     console.log(e);
   }
 
   // Stop the harvester
   harvester.stop();
+  console.log("Harvester terminated");
 }
 
 main();
