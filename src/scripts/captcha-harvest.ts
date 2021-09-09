@@ -99,7 +99,7 @@ export default class CaptchaHarvest {
     // If fork is used no Electron module will be available in the child module
     const child = runAsElectron
       ? proc.spawn(process.execPath, [modulePath])
-      : proc.exec(`electron ${modulePath}`, (error) => {
+      : proc.execFile("electron", [modulePath], { shell: true }, (error) => {
           if (error) throw new Error(`${error.code}: ${error.message}`);
         });
 
