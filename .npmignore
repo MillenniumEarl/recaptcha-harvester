@@ -1,9 +1,9 @@
 # Directories
 .github
 .vscode
-security
-src
-test
+/security
+/src
+/test
 
 # Files
 /dist/tsconfig.tsbuildinfo
