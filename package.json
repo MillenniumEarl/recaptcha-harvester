@@ -1,6 +1,6 @@
 {
   "name": "@millenniumearl/recaptcha-harvester",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Pluggable Captcha harvester with Electron",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
