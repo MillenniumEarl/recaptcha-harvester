@@ -14,6 +14,7 @@ import ipc from "node-ipc";
 
 // Local modules
 import {
+  CaptchaType,
   ICaptchaError,
   ICaptchaRequest,
   ICaptchaResponse,
@@ -125,15 +126,22 @@ export async function startServers(): Promise<void> {
   // Start the IPC client used to communicate with the main process
   ipcClient = startIPCServer();
 
-  // Start the servers used to rendere the CAPTCHA in Electron
-  captchaViewServerHTTP = await startCaptchaViewServer(
-    VIEW_SERVER_PORT_HTTP,
-    "HTTP"
-  );
-  captchaViewServerHTTPS = await startCaptchaViewServer(
-    VIEW_SERVER_PORT_HTTPS,
-    "HTTPS"
-  );
+  await new Promise<void>((resolve) => {
+    ipcClient.on("captcha-type", async (type: CaptchaType) => {
+      // Start the servers used to rendere the CAPTCHA in Electron
+      captchaViewServerHTTP = await startCaptchaViewServer(
+        VIEW_SERVER_PORT_HTTP,
+        "HTTP",
+        type
+      );
+      captchaViewServerHTTPS = await startCaptchaViewServer(
+        VIEW_SERVER_PORT_HTTPS,
+        "HTTPS",
+        type
+      );
+      resolve();
+    });
+  });
 
   // Start the server used to fetch the local CAPTCHA
   captchaHarvestServer = startCaptchaHarvestServer(

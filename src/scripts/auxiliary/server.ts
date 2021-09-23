@@ -14,23 +14,31 @@ import express from "express";
 import WebSocket from "ws";
 
 // Local modules
-import { ICaptchaMessage, ICaptchaRequest, ICaptchaError } from "../interfaces";
+import {
+  ICaptchaMessage,
+  ICaptchaRequest,
+  ICaptchaError,
+  CaptchaType
+} from "../interfaces";
 
 /**
  * Initialize the server that will provide the captcha widget.
  * @param port Listening port
  * @param protocol Protocol used in the server
+ * @param type Type of CAPTCHA
  */
 export async function startCaptchaViewServer(
   port: number,
-  protocol: "HTTP" | "HTTPS"
+  protocol: "HTTP" | "HTTPS",
+  type: CaptchaType = "reCAPTCHAv2"
 ): Promise<http.Server | https.Server> {
   // Create the server
   const e = express();
 
   // Get the widget path
   const basePath = path.join(__dirname, "..", "..", "widget");
-  const widgetPath = path.join(basePath, "captcha.html");
+  const filename = type === "reCAPTCHAv2" ? "recaptcha.html" : "hcaptcha.html";
+  const widgetPath = path.join(basePath, filename);
 
   // Serve style and scripts
   e.use("/scripts", express.static(path.join(basePath, "scripts")));

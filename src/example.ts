@@ -23,7 +23,7 @@ dotenv.config();
 async function main() {
   // Create and start harvester
   const harvester = new CaptchaHarvest();
-  await harvester.start();
+  await harvester.start("hCAPTCHA");
   console.log("Harvester started correctly");
 
   // Fetch the token

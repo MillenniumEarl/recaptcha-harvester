@@ -18,6 +18,7 @@ import {
   ICaptchaMessage,
   ICaptchaRequest,
   ICaptchaResponse,
+  CaptchaType,
   IResponseData
 } from "./interfaces";
 import { HARVEST_SERVER_PORT } from "./constants";
@@ -114,24 +115,30 @@ export default class CaptchaHarvest {
   /**
    * Initialize the servers used to get and process the CAPTCHA widget.
    */
-  async start(): Promise<CaptchaHarvest> {
+  async start(type: CaptchaType): Promise<CaptchaHarvest> {
     if (this.child) throw new Error("Harvester already initialized");
 
     // Start IPC server for process communication
     this.startIPCServer();
 
+    // Send the type of CAPTCHA we want
+    ipc.server.on("ipc-loaded", (_, socket) =>
+      ipc.server.emit(socket, "captcha-type", type)
+    );
+
     // Start the servers and the electron process in a separate process
     const path = join(__dirname, "main.js");
     this.child = this.runChild(path);
 
-    // Start and wait for socket to open
-    ipc.server.on(
-      "servers-ready",
-      () =>
-        (this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`))
-    );
+    return new Promise((resolve) => {
+      ipc.server.on("servers-ready", () => {
+        // Instantiate the socket
+        this.socket = new WebSocket(`ws://127.0.0.1:${HARVEST_SERVER_PORT}`);
 
-    return this;
+        // Return this CaptchaHarvest
+        resolve(this);
+      });
+    });
   }
 
   /**
@@ -160,10 +167,27 @@ export default class CaptchaHarvest {
    * @param sitekey Unique key associated with the site
    */
   async getCaptchaToken(url: string, sitekey: string): Promise<IResponseData> {
+    // Local variables
+    const SLEEP_TIME = 100;
+    const TIMEOUT = 30000;
+    let waitTime = 0;
+
     if (!this.child) throw new Error("Harvester not started");
 
-    // Wait for the socket to be ready
-    await waitForServersReady();
+    // Wait for the socket to be established
+    while (!this.socket) {
+      await sleep(SLEEP_TIME);
+
+      waitTime += SLEEP_TIME;
+      if (waitTime >= TIMEOUT) {
+        throw new Error(
+          `Timeout: The connection to the socket required more time than expected (${TIMEOUT})`
+        );
+      }
+    }
+
+    // Wait for the socket to be open
+    await waitForOpenConnection(this.socket);
 
     // Parse and convert the url to use HTTP
     const domain = new URL(url);
@@ -231,28 +255,4 @@ function waitForOpenConnection(
  */
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Waits for the servers on the children process to be ready.
- * @param timeout Value in milliseconds after which raise an exception
- */
-async function waitForServersReady(timeout = 30000) {
-  // Local variables
-  const SLEEP_TIME = 100;
-  let waitTime = 0;
-
-  // Wait for the socket to be established
-  while (!this.socket) {
-    await sleep(SLEEP_TIME);
-    waitTime += SLEEP_TIME;
-    if (waitTime >= timeout) {
-      throw new Error(
-        `Timeout: The connection to the socket required more time than expected (${timeout})`
-      );
-    }
-  }
-
-  // Wait for the socket to be open
-  await waitForOpenConnection(this.socket);
 }
