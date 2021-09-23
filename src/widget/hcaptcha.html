@@ -64,19 +64,18 @@
         };
 
         /* Called when Captcha is submitted */
-        var submit = function () {
-            const captchaToken = document.getElementById('h-captcha-response').value;
+        var submit = function (token) {
             window.api.send(`submit-captcha-${id}`, {
-                value: captchaToken,
+                value: token,
                 createdAt: Math.round(new Date() / 1000)
             });
-            console.log(`Send token: ${captchaToken}`);
+            console.log(`Send token: ${token}`);
         };
 
         /* Resize automatically to fit images */
         const sizeInterval = setInterval(() => {
             // Select the hCAPTCHA popup frame (with squares)
-            const challengeFrame = document.querySelectorAll('div > div > iframe')[1];
+            const challengeFrame = document.querySelectorAll('div > div > iframe')[0];
 
             if (challengeFrame) {
                 // Get the parents of the challenge
