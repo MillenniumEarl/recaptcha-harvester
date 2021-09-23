@@ -68,7 +68,7 @@ export default class CaptchaHarvest {
 
   /**
    * Check if the current process is a Electron
-   * instance with enabled node inntegration.
+   * instance with enabled node integration.
    */
   private hasNodeIntegration(): boolean {
     return (
