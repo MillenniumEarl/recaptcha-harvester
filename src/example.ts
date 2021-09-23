@@ -23,7 +23,7 @@ dotenv.config();
 async function main() {
   // Create and start harvester
   const harvester = new CaptchaHarvest();
-  await harvester.start("hCAPTCHA");
+  await harvester.start("reCAPTCHAv2");
   console.log("Harvester started correctly");
 
   // Fetch the token
