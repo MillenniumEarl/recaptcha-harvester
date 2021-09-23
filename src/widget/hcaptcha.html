@@ -1,3 +1,10 @@
+<!--
+ Copyright (c) 2021 MillenniumEarl
+ 
+ This software is released under the MIT License.
+ https://opensource.org/licenses/MIT
+-->
+
 <!doctype html>
 <html>
 
@@ -5,7 +12,7 @@
     <meta charset="utf-8">
     <title>Captcha Harvest</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://www.google.com/recaptcha/api.js?onload=onloadCallback&render=explicit" async defer></script>
+    <script src="https://js.hcaptcha.com/1/api.js?onload=onloadCallback&render=explicit" async defer></script>
     <style>
         body {
             height: 100vh;
@@ -14,12 +21,19 @@
             background-color: #222127;
             overflow: hidden;
         }
+
+        .center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 
 <body>
-    <!-- Show the reCAPTCHA widget -->
-    <div id="g-recaptcha-container"></div>
+    <!-- Show the hCAPTCHA widget -->
+    <div id="h-captcha-container" class="center"></div>
 
     <script type="text/javascript">
         // Constants
@@ -41,17 +55,17 @@
 
         /* Called when Captcha is loaded */
         var onloadCallback = function () {
-            grecaptcha.render('g-recaptcha-container', {
+            hcaptcha.render('h-captcha-container', {
                 sitekey: sitekey,
                 theme: 'dark',
                 callback: submit
             });
-            console.log("Rendering reCAPTCHA widget...");
+            console.log("Rendering hCAPTCHA widget...");
         };
 
         /* Called when Captcha is submitted */
         var submit = function () {
-            const captchaToken = document.getElementById('g-recaptcha-response').value;
+            const captchaToken = document.getElementById('h-captcha-response').value;
             window.api.send(`submit-captcha-${id}`, {
                 value: captchaToken,
                 createdAt: Math.round(new Date() / 1000)
@@ -61,7 +75,7 @@
 
         /* Resize automatically to fit images */
         const sizeInterval = setInterval(() => {
-            // Select the reCAPTCHA popup frame (with squares)
+            // Select the hCAPTCHA popup frame (with squares)
             const challengeFrame = document.querySelectorAll('div > div > iframe')[1];
 
             if (challengeFrame) {
@@ -84,7 +98,7 @@
                 if (frameParent.style.visibility === 'visible') {
                     options.width = parseInt(challengeFrame.style.width.replace("px", ""), 10) + MARGIN_WIDTH;
                     options.height = parseInt(challengeFrame.style.height.replace("px", ""), 10) +
-                    MARGIN_HEIGHT;
+                        MARGIN_HEIGHT;
                 }
 
                 // Send resize message via IPC
