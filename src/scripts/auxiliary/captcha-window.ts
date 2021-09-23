@@ -59,7 +59,7 @@ export async function createCaptchaWindow(
 
   w.webContents.on(
     "certificate-error",
-    (event, url, error, certificate, callback) => {
+    (event, _url, _error, _certificate, callback) => {
       event.preventDefault();
       callback(true);
     }
