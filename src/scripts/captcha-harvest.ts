@@ -163,8 +163,7 @@ export default class CaptchaHarvest {
     if (!this.child) throw new Error("Harvester not started");
 
     // Wait for the socket to be ready
-    while (!this.socket) await sleep(200);
-    await waitForOpenConnection(this.socket);
+    await waitForServersReady();
 
     // Parse and convert the url to use HTTP
     const domain = new URL(url);
@@ -232,4 +231,28 @@ function waitForOpenConnection(
  */
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Waits for the servers on the children process to be ready.
+ * @param timeout Value in milliseconds after which raise an exception
+ */
+async function waitForServersReady(timeout = 30000) {
+  // Local variables
+  const SLEEP_TIME = 100;
+  let waitTime = 0;
+
+  // Wait for the socket to be established
+  while (!this.socket) {
+    await sleep(SLEEP_TIME);
+    waitTime += SLEEP_TIME;
+    if (waitTime >= timeout) {
+      throw new Error(
+        `Timeout: The connection to the socket required more time than expected (${timeout})`
+      );
+    }
+  }
+
+  // Wait for the socket to be open
+  await waitForOpenConnection(this.socket);
 }
