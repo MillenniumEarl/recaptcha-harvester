@@ -26,7 +26,7 @@ export async function createCaptchaWindow(
   // Create the window
   const w = new BrowserWindow({
     width: 320,
-    height: 92,
+    height: 120,
     show: true,
     frame: true,
     resizable: false,
@@ -49,7 +49,7 @@ export async function createCaptchaWindow(
   await w.webContents.session.setProxy({
     mode: "fixed_servers",
     proxyRules: `http=localhost:${VIEW_SERVER_PORT_HTTP};https=localhost:${VIEW_SERVER_PORT_HTTPS}`,
-    proxyBypassRules: ".google.com, .gstatic.com"
+    proxyBypassRules: ".google.com, .gstatic.com, .hcaptcha.com"
   });
 
   const u = new URL(siteurl);
