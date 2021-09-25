@@ -5,12 +5,13 @@
 
 // Core modules
 import proc from "child_process";
-import { join } from "path";
+import { join, basename } from "path";
 
 // Public modules from npm
 import WebSocket from "ws";
 import { v4 as uuid } from "uuid";
 import ipc from "node-ipc";
+import { app } from "electron";
 
 // Local modules
 import {
@@ -45,63 +46,20 @@ export default class CaptchaHarvest {
     ipc.server.start();
   }
 
-  /**
-   * Check if the current process is a Electron's Renderer instance.
-   */
-  private isRendererProcess(): boolean {
-    return (
-      typeof window !== "undefined" &&
-      typeof window?.process === "object" &&
-      window.process.type === "renderer"
-    );
-  }
-
-  /**
-   * Check if the current process is a Electron's Main instance.
-   */
-  private isMainProcess(): boolean {
-    return (
-      typeof process !== "undefined" &&
-      typeof process?.versions === "object" &&
-      !!process.versions.electron
-    );
-  }
-
-  /**
-   * Check if the current process is a Electron
-   * instance with enabled node integration.
-   */
-  private hasNodeIntegration(): boolean {
-    return (
-      typeof navigator === "object" &&
-      typeof navigator.userAgent === "string" &&
-      navigator.userAgent.indexOf("Electron") >= 0
-    );
-  }
-
-  /**
-   * Check if the current process is a Electron instance.
-   */
-  private isElectron(): boolean {
-    return (
-      this.isRendererProcess() ||
-      this.isMainProcess() ||
-      this.hasNodeIntegration()
-    );
-  }
-
   private runChild(modulePath: string): proc.ChildProcess {
     // First check if the process is running as Electron instance
-    const runAsElectron = this.isElectron();
+    const runAsElectron = isElectron();
 
     // Use exec for node process and spawn for Electron process
     // The spawn command is the implementation of the fork method
     // but without the default parameter ELECTRON_RUN_AS_NODE=1.
     // If fork is used no Electron module will be available in the child module
     const child = runAsElectron
-      ? proc.spawn(process.execPath, [modulePath])
+      ? proc.spawn(getElectronBinariesPath(), [modulePath])
       : proc.execFile("electron", [modulePath], { shell: true }, (error) => {
-          if (error) throw new Error(`${error.code}: ${error.message}`);
+          if (error) {
+            throw new Error(`${error.code}: ${error.message}`);
+          }
         });
 
     // Rethrow child's error
@@ -206,7 +164,6 @@ export default class CaptchaHarvest {
       this.socket.on("message", (message) => {
         // Parse the incoming response
         const parsed: ICaptchaMessage = JSON.parse(message.toString());
-
         if (parsed?.type === "Error") {
           const e = parsed as ICaptchaError;
           reject(new Error(e.error));
@@ -217,6 +174,47 @@ export default class CaptchaHarvest {
       });
     });
   }
+}
+
+/**
+ * Check if the current process is a Electron's Renderer instance.
+ */
+function isRendererProcess(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    typeof window?.process === "object" &&
+    window.process.type === "renderer"
+  );
+}
+
+/**
+ * Check if the current process is a Electron's Main instance.
+ */
+function isMainProcess(): boolean {
+  return (
+    typeof process !== "undefined" &&
+    typeof process?.versions === "object" &&
+    !!process.versions.electron
+  );
+}
+
+/**
+ * Check if the current process is a Electron
+ * instance with enabled node integration.
+ */
+function hasNodeIntegration(): boolean {
+  return (
+    typeof navigator === "object" &&
+    typeof navigator.userAgent === "string" &&
+    navigator.userAgent.indexOf("Electron") >= 0
+  );
+}
+
+/**
+ * Check if the current process is a Electron instance.
+ */
+function isElectron(): boolean {
+  return isRendererProcess() || isMainProcess() || hasNodeIntegration();
 }
 
 /**
@@ -255,4 +253,30 @@ function waitForOpenConnection(
  */
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if the module is in an ASAR archive (i.e. with `electron-builder`).
+ */
+function isModulePacked() {
+  return basename(app.getAppPath()).includes("app.asar");
+}
+
+/**
+ * Get the binary path of electron if this process is run as Electron.
+ */
+function getElectronBinariesPath() {
+  return isModulePacked()
+    ? join(
+        app.getAppPath().replace("app.asar", ""),
+        "app.asar.unpacked",
+        "node_modules",
+        "@millenniumearl",
+        "recaptcha-harvester",
+        "node_modules",
+        "electron",
+        "dist",
+        "electron.exe"
+      )
+    : process.execPath;
 }
