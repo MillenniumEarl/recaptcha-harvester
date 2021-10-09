@@ -89,7 +89,7 @@ async function handleCaptchaRequest(ws: WebSocket, message: ICaptchaRequest) {
   ipcMain.once(`submit-captcha-${message.id}`, (_event, arg) => {
     // Captcha resolved, close the window
     CAPTCHA_WINDOWS_BANK[message.id].close();
-    CAPTCHA_WINDOWS_BANK[message.id] = null;
+    delete CAPTCHA_WINDOWS_BANK[message.id];
 
     // Return the response
     const data: IResponseData = {
@@ -170,7 +170,7 @@ export function stopServers(): void {
 app.on("ready", () => startServers());
 
 // Prevent to quit this process when all the window are closed
-app.on("window-all-closed", (e) => e.preventDefault());
+app.on("window-all-closed", (e: Electron.Event) => e.preventDefault());
 
 // Stop the servers when this process is killed
 app.on("before-quit", () => stopServers());

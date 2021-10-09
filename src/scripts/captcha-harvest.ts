@@ -29,11 +29,11 @@ export default class CaptchaHarvest {
   /**
    * WebSocket used to communicate with the servers initialized in the child process.
    */
-  socket: WebSocket;
+  socket: WebSocket = null as any;
   /**
    * Child process used start a Electron instance to show the CAPTCHA widget.
    */
-  child: proc.ChildProcess;
+  child: proc.ChildProcess = null as any;
 
   /**
    * Start the IPC server used to communicate with the child process.
@@ -115,8 +115,8 @@ export default class CaptchaHarvest {
     ipc.server.stop();
 
     // Delete the reference to the variable
-    this.socket = null;
-    this.child = null;
+    this.socket = null as any;
+    this.child = null as any;
   }
 
   /**

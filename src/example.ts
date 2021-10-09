@@ -26,6 +26,13 @@ async function main() {
   await harvester.start("reCAPTCHAv2");
   console.log("Harvester started correctly");
 
+  // Check if the environment variables are set
+  if (!process.env.WEBSITE || !process.env.SITEKEY) {
+    throw new Error(
+      "You must set a .env file with WEBSITE and SITEKEY variables"
+    );
+  }
+
   // Fetch the token
   try {
     const data = await harvester.getCaptchaToken(
