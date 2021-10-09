@@ -25,6 +25,7 @@ export async function createCaptchaWindow(
 ): Promise<BrowserWindow> {
   // Create the window
   const w = new BrowserWindow({
+    title: `Captcha harvest: ${new URL(siteurl).hostname}`,
     width: 320,
     height: 120,
     show: true,
@@ -52,6 +53,7 @@ export async function createCaptchaWindow(
     proxyBypassRules: ".google.com, .gstatic.com, .hcaptcha.com"
   });
 
+  // Prepare and load URL
   const u = new URL(siteurl);
   u.searchParams.set("sitekey", sitekey);
   u.searchParams.set("id", id);
