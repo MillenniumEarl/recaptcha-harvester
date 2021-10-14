@@ -29,11 +29,11 @@ export default class CaptchaHarvest {
   /**
    * WebSocket used to communicate with the servers initialized in the child process.
    */
-  socket: WebSocket = null as any;
+  socket: WebSocket | null = null;
   /**
    * Child process used start a Electron instance to show the CAPTCHA widget.
    */
-  child: proc.ChildProcess = null as any;
+  child: proc.ChildProcess | null = null;
 
   /**
    * Start the IPC server used to communicate with the child process.
@@ -103,7 +103,7 @@ export default class CaptchaHarvest {
    * Stop the servers used to get and process the CAPTCHA widget.
    */
   stop(): void {
-    if (!this.child) throw new Error("Harvester not started");
+    if (!this.child || !this.socket) throw new Error("Harvester not started");
 
     // Kill child process
     ipc.server.broadcast("kill");
@@ -115,8 +115,8 @@ export default class CaptchaHarvest {
     ipc.server.stop();
 
     // Delete the reference to the variable
-    this.socket = null as any;
-    this.child = null as any;
+    this.socket = null;
+    this.child = null;
   }
 
   /**
@@ -161,7 +161,8 @@ export default class CaptchaHarvest {
     this.socket.send(JSON.stringify(request));
 
     return new Promise<IResponseData>((resolve, reject) => {
-      this.socket.on("message", (message) => {
+      const socket = this.socket as WebSocket;
+      socket.on("message", (message) => {
         // Parse the incoming response
         const parsed: ICaptchaMessage = JSON.parse(message.toString());
         if (parsed?.type === "Error") {
@@ -259,7 +260,7 @@ function sleep(ms: number) {
  * Check if the module is in an ASAR archive (i.e. with `electron-builder`).
  */
 function isModulePacked() {
-  return basename(app.getAppPath()).includes("app.asar");
+  return basename(app.getAppPath()).includes("app.asar") || app.isPackaged;
 }
 
 /**
