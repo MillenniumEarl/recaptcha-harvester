@@ -267,17 +267,23 @@ function isModulePacked() {
  * Get the binary path of electron if this process is run as Electron.
  */
 function getElectronBinariesPath() {
-  return isModulePacked()
-    ? join(
-        app.getAppPath().replace("app.asar", ""),
-        "app.asar.unpacked",
-        "node_modules",
-        "@millenniumearl",
-        "recaptcha-harvester",
-        "node_modules",
-        "electron",
-        "dist",
-        "electron.exe"
-      )
-    : process.execPath;
+  const isPacked = isModulePacked();
+
+  // This is the path to the folder app.asar.unpacked
+  const asarUnpackedPath = app
+    .getAppPath()
+    .replace("app.asar", "app.asar.unpacked");
+
+  // Path to Electron build of this module
+  const pathToElectron = join(
+    "node_modules",
+    "@millenniumearl",
+    "recaptcha-harvester",
+    "node_modules",
+    "electron",
+    "dist",
+    "electron.exe"
+  );
+
+  return isPacked ? join(asarUnpackedPath, pathToElectron) : process.execPath;
 }
