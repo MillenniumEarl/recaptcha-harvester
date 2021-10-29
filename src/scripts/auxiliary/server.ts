@@ -33,7 +33,9 @@ export async function startCaptchaViewServer(
   type: CaptchaType = "reCAPTCHAv2"
 ): Promise<http.Server | https.Server> {
   // Create the server
+  // deepcode ignore UseCsurfForExpress: This is only a local server, deepcode ignore UseHelmetForExpress: This is only a local server
   const e = express();
+  e.disable("x-powered-by");
 
   // Get the widget path
   const basePath = path.join(__dirname, "..", "..", "widget");
