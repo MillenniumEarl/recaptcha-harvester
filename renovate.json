@@ -2,6 +2,7 @@
   "extends": [
     "config:base"
   ],
+  "ignoreDeps": ["node-ipc"],
   "packageRules": [
     {
       "description": "Automatically merge minor and patch-level updates",
