@@ -37,7 +37,7 @@
     "electron": "^17.1.0",
     "node-ipc": "10.1.0",
     "uuid": "^8.3.2",
-    "ws": "^8.4.2"
+    "ws": "^8.5.0"
   },
   "devDependencies": {
     "@types/express": "4.17.13",
