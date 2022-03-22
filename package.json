@@ -33,7 +33,7 @@
     "node": ">=14.10"
   },
   "dependencies": {
-    "express": "^4.17.2",
+    "express": "^4.17.3",
     "electron": "^17.1.0",
     "node-ipc": "10.1.0",
     "uuid": "^8.3.2",
