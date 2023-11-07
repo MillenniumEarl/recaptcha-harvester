@@ -40,7 +40,7 @@
     "ws": "^8.6.0"
   },
   "devDependencies": {
-    "@types/express": "4.17.20",
+    "@types/express": "4.17.21",
     "@types/node-ipc": "9.2.2",
     "@types/uuid": "9.0.6",
     "@types/ws": "8.5.8",
