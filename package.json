@@ -53,7 +53,7 @@
     "eslint-plugin-prettier": "4.2.5",
     "prettier": "2.8.8",
     "ts-node": "10.9.2",
-    "typescript": "5.8.3"
+    "typescript": "5.9.2"
   },
   "directories": {
     "test": "test"
